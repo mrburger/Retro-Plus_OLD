@@ -40,7 +40,7 @@ public abstract class MixinOverworldDimension extends Dimension
 		{
 			CompoundTag opts = this.world.getLevelProperties().getGeneratorOptions();
 			// Insert Beta+ Generator
-			info.setReturnValue(chunkGenType.create(this.world, new BetaBiomeSource(), new BetaChunkGeneratorConfig()));
+			info.setReturnValue(chunkGenType.create(this.world, new BetaBiomeSource(this.world.getSeed()), new BetaChunkGeneratorConfig()));
 		}
 	}
 }
