@@ -6,7 +6,8 @@
   "mixins": [
     "MixinOverworldDimension",
     "MixinLevelGeneratorType",
-    "AccessorLevelGeneratorType"
+    "AccessorLevelGeneratorType",
+    "MixinBiomeArray"
   ],
   "injectors": {
     "defaultRequire": 1

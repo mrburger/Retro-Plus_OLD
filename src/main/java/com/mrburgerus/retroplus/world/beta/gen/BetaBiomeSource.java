@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.mrburgerus.retroplus.RetroPlus;
 import com.mrburgerus.retroplus.world.noise.beta.NoiseGeneratorOctavesBiome;
 import net.minecraft.util.Pair;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.Biome;
@@ -20,7 +21,7 @@ public class BetaBiomeSource extends BiomeSource
 	/* FIELDS */
 	// Constants
 	// Allowed initial biomes. I'll have to update this.
-	public static final Set<Biome> BIOMES = ImmutableSet.of(Biomes.JUNGLE, Biomes.BAMBOO_JUNGLE, Biomes.BADLANDS, Biomes.BIRCH_FOREST);
+	public static final Set<Biome> BIOMES = ImmutableSet.of(Biomes.SAVANNA, Biomes.TAIGA);
 	public static final List<Biome> SPAWN_BIOMES = Lists.asList(Biomes.BEACH, new Biome[]{Biomes.SNOWY_BEACH});
 
 	// Used for world gen
@@ -33,7 +34,7 @@ public class BetaBiomeSource extends BiomeSource
 	public final double scaleVal = (1.0D / 39.999999404);
 	public final double mult = 2;
 	// New
-	private BetaChunkGenerator generator;
+	public BetaChunkGenerator generator;
 
 	/* CONSTRUCTORS */
 	public BetaBiomeSource (long seed)
@@ -53,62 +54,22 @@ public class BetaBiomeSource extends BiomeSource
 	// CALL FIRST PLEASE
 	public void setChunkGenerator (BetaChunkGenerator chunkGenerator)
 	{
-		this.generator = chunkGenerator;
+		generator = chunkGenerator;
 	}
 
 	// Get Biome for specified x, y, z coordinates
+	// X, Y, Z appear to be in Biome coordinates, which are 4-per-chunk instead of 16-per
 	@Override
-	public Biome getBiomeForNoiseGen (int x, int y, int z)
+	public Biome getBiomeForNoiseGen (int biomeX, int biomeY, int biomeZ)
 	{
-		// Return the biome to use
-		int groundHeight = generator.getHeightOnGround(x, z, Heightmap.Type.WORLD_SURFACE_WG);
-		//int groundHeight = 65;
-		if (groundHeight < RetroPlus.SEA_LEVEL)
-		{
-			//RetroPlus.LOGGER.info("Y: " + groundHeight);
-			return Biomes.OCEAN;
-		}
-		else
-		{
-			return Biomes.SAVANNA;
-		}
-	}
-
-
-	// Generates the noise fields that were previously created for biome assignment
-	public void generateNoiseFields (int startX, int startZ, int sizeXZ)
-	{
-		temperatures = temperatureOctave.generateOctaves(null, (double) startX, (double) startZ, sizeXZ, sizeXZ, scaleVal, scaleVal, 0.25);
-		humidities = humidityOctave.generateOctaves(null, (double) startX, (double) startZ, sizeXZ, sizeXZ, scaleVal * mult, scaleVal * mult, 0.3333333333333333);
-		noise = noiseOctave.generateOctaves(null, (double) startX, (double) startZ, sizeXZ, sizeXZ, 0.25, 0.25, 0.5882352941176471);
-		//temperatures = temperatureOctave.generateOctaves(temperatures, (double) startX, (double) startZ, sizeXZ, sizeXZ, scaleVal, scaleVal, 0.25);
-		//humidities = humidityOctave.generateOctaves(humidities, (double) startX, (double) startZ, sizeXZ, sizeXZ, scaleVal * mult, scaleVal * mult, 0.3333333333333333);
-		//noise = noiseOctave.generateOctaves(noise, (double) startX, (double) startZ, sizeXZ, sizeXZ, 0.25, 0.25, 0.5882352941176471);
-
-		int counter = 0;
-		for (int x = 0; x < sizeXZ; ++x)
-		{
-			for (int z = 0; z < sizeXZ; ++z)
-			{
-				// REQUIRED
-				double var9 = noise[counter] * 1.1 + 0.5;
-				double oneHundredth = 0.01;
-				double point99 = 1.0 - oneHundredth;
-				double temperatureVal = (temperatures[counter] * 0.15 + 0.7) * point99 + var9 * oneHundredth;
-				oneHundredth = 0.002;
-				point99 = 1.0 - oneHundredth;
-				double humidityVal = (humidities[counter] * 0.15 + 0.5) * point99 + var9 * oneHundredth;
-				temperatureVal = 1.0 - (1.0 - temperatureVal) * (1.0 - temperatureVal);
-				temperatureVal = MathHelper.clamp(temperatureVal, 0.0, 1.0);
-				humidityVal = MathHelper.clamp(humidityVal, 0.0, 1.0);
-				temperatures[counter] = temperatureVal;
-				humidities[counter] = humidityVal;
-				counter++;
-			}
-		}
+		//int groundHeight = generator.getHeightOnGroundForBiome(biomeX, biomeZ);
+	//	int groundHeight = generator.getHeightOnGround(biomeX << 2, biomeZ << 2, Heightmap.Type.WORLD_SURFACE_WG);
+		int groundHeight = 65;
+		return Biomes.SAVANNA;
 	}
 
 	// NEW, gets a PAIR of Noise fields
+	// WORKS
 	public Pair<double[], double[]> getNoiseFields (int startX, int startZ, int sizeXZ)
 	{
 		double[] temps = temperatureOctave.generateOctaves(null, (double) startX, (double) startZ, sizeXZ, sizeXZ, scaleVal, scaleVal, 0.25);
@@ -137,5 +98,13 @@ public class BetaBiomeSource extends BiomeSource
 			}
 		}
 		return new Pair(temps, humids);
+	}
+
+	// Testing
+	public static ChunkPos biomeToChunkPos (int biomeX, int biomeZ)
+	{
+		int chunkX = biomeX >> 2;
+		int chunkZ = biomeZ >> 2;
+		return new ChunkPos(chunkX, chunkZ);
 	}
 }
